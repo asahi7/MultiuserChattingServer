@@ -15,13 +15,10 @@
 
 void respond(int sock);
 
-std::string ROOT;
-
 int main(int argc, char *argv[]) {
     int sockfd, portno = PORT;
     socklen_t clilen;
     struct sockaddr_in serv_addr;
-    ROOT = getenv("PWD");
 
     /* First call to socket() function */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -81,14 +78,31 @@ int main(int argc, char *argv[]) {
 }
 
 void respond(int sock) {
-    int n;
     char buffer[4096];
+    while(1) {
 
-    bzero(buffer, sizeof(buffer));
-    n = recv(sock, buffer, sizeof(buffer), 0);
+        bzero(buffer, sizeof(buffer));
+        recv(sock, buffer, sizeof(buffer), 0);
 
-    std::cout << "Client sent smth" << std::endl;
-    std::cout << buffer << std::endl;
+        std::cout << "Client sent: " << buffer << std::endl;
+
+        char * token = strtok(buffer, " ");
+
+        if(strncmp(token, "/new", 4) == 0) {
+            std::cout << "Create new user?" << std::endl; // TODO create new user
+            token = strtok(NULL, " "); // TODO may be NULL, check
+            std::string room_no(token);
+            token = strtok(NULL, " "); // TODO may be NULL, check
+            std::string username(token);
+            std::string msg = "Hello " + username;
+            const char *msg_c = msg.c_str();
+            std::cout << msg_c << std::endl;
+            send(sock, msg_c, sizeof(msg_c), 0);
+            break;
+        } else {
+            std::cout << "Unknown command" << std::endl; // TODO send to client
+        }
+    }
 
     shutdown(sock, SHUT_RDWR);
     close(sock);

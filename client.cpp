@@ -104,8 +104,19 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    char* msg = "Hello";
-    send(sockfd, msg, strlen(msg), 0);
+    char buffer[4096];
+    string msg;
+    const char* msg_c;
+    bzero(buffer, sizeof(buffer));
+
+    msg = "/new " + to_string(room_no) + " " + client_name;
+    msg_c = msg.c_str();
+
+    send(sockfd, msg_c, strlen(msg_c), 0);
+
+    recv(sockfd, buffer, sizeof(buffer), 0);
+
+    cout << buffer << endl;
 
     close(sockfd);
 }
