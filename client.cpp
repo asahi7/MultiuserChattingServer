@@ -139,7 +139,12 @@ void receive_server_chat(int sockfd) {
         bzero(buffer, sizeof(buffer));
         recv(sockfd, buffer, sizeof(buffer), 0);
         if(strlen(buffer) != 0) {
-            cout << buffer << endl;
+            if(strncmp(buffer, "/ishealthy", 10) == 0) {
+                string msg = "/healthy";
+                send(sockfd, msg.c_str(), strlen(msg.c_str()), 0);
+            } else {
+                cout << buffer << endl;
+            }
         }
         this_thread::sleep_for(chrono::milliseconds(100)); // TODO remove in the future
     }
