@@ -198,7 +198,15 @@ void respond(int sock) { // individual client's thread
             chats[new_room_no].insert(make_pair(username, sock));
             room_no = new_room_no;
             mtx.unlock();
-        } else { // send message command
+        } else if(strncmp(token, "/quit”", 5) == 0) {
+            mtx.lock();
+            chats[room_no].erase(chats[room_no].find(username));
+            mtx.unlock();
+            send_message(sock, "Good bye " + username);
+            send_room_msg_exc(room_no, username + " is disconnected from room #" + std::to_string(room_no), {username});
+            break;
+        }
+        else { // send message command
             if(strncmp(bufcpy, "All : ", 6) == 0) {
                 std::string msg_str(bufcpy);
                 std::string msg = msg_str.substr(6, std::string::npos);
