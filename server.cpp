@@ -99,14 +99,17 @@ void send_room_msg_exc(int room_no, std::string msg, std::set<std::string> excep
     }
 }
 
-void send_room_msg_to(int room_no, std::string msg, std::set<std::string> rcps) {
-    auto it = chats[room_no].begin();
-    for(; it != chats[room_no].end(); it++) {
-        std::string user_n = (*it).first;
-        if(rcps.find(user_n) != rcps.end()) {
-            send_message((*it).second, msg);
+std::set<std::string> send_room_msg_to(int room_no, std::string msg, std::set<std::string> rcps) {
+    auto map = chats[room_no];
+    std::set<std::string> unfound;
+    for(std::string rcp : rcps) {
+        if(map.find(rcp) != map.end()) {
+            send_message(map[rcp], msg);
+        } else {
+            unfound.insert(rcp);
         }
     }
+    return unfound;
 }
 
 
@@ -143,7 +146,6 @@ std::string get_msg(char* ch) {
                 continue;
             }
         }
-
     }
     return res;
 }
@@ -188,13 +190,19 @@ void respond(int sock) { // individual client's thread
             } else {
                 auto rcps = get_recepients(bufcpy);
                 std::string msg = get_msg(bufcpy);
-                /*
-                for(auto rcp : rcps) {
-                    std::cout << rcp << std::endl;
+                auto unfound = send_room_msg_to(room_no, username + " : " + msg, rcps);
+                std::string unf_msg = "";
+                bool first = 1;
+                for(std::string name : unfound) {
+                    if(! first) {
+                        unf_msg += ", ";
+                    }
+                    unf_msg += name;
+                    first = 0;
                 }
-                std::cout << msg << std::endl;
-                 */
-                send_room_msg_to(room_no, username + " : " + msg, rcps);
+                if(unfound.size() != 0) {
+                    send_message(sock, "There is no such user : " + unf_msg);
+                }
             }
         }
     }
