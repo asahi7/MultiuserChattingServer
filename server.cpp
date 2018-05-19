@@ -89,7 +89,7 @@ void send_message(int sock, std::string msg) {
     send(sock, msg_c, strlen(msg_c), 0);
 }
 
-void send_room_msg(int room_no, std::string msg, std::set<std::string> except) {
+void send_room_msg_exc(int room_no, std::string msg, std::set<std::string> except) {
     auto it = chats[room_no].begin();
     for(; it != chats[room_no].end(); it++) {
         std::string user_n = (*it).first;
@@ -99,8 +99,60 @@ void send_room_msg(int room_no, std::string msg, std::set<std::string> except) {
     }
 }
 
-void respond(int sock) {
-    char buffer[4096];
+void send_room_msg_to(int room_no, std::string msg, std::set<std::string> rcps) {
+    auto it = chats[room_no].begin();
+    for(; it != chats[room_no].end(); it++) {
+        std::string user_n = (*it).first;
+        if(rcps.find(user_n) != rcps.end()) {
+            send_message((*it).second, msg);
+        }
+    }
+}
+
+
+std::set<std::string> get_recepients(char *ch) {
+    std::set<std::string> res;
+    std::string rec;
+    for(int i = 0; i < strlen(ch); i++) {
+        if(ch[i] == ':') {
+            res.insert(rec);
+            break;
+        }
+        if(ch[i] != ' ' && ch[i] != ',') {
+            rec += ch[i];
+        } else if(ch[i] == ',') {
+            res.insert(rec);
+            rec = "";
+        }
+    }
+    return res;
+}
+
+std::string get_msg(char* ch) {
+    bool message_start = false;
+    std::string res = "";
+    for(int i = 0; i < strlen(ch); i++) {
+        if(message_start) {
+            res += ch[i];
+        }
+
+        if(ch[i] == ':' && ! message_start) {
+            message_start = true;
+            i++;
+            if(ch[i] == ' ') {
+                continue;
+            }
+        }
+
+    }
+    return res;
+}
+
+void respond(int sock) { // individual client's thread
+    char buffer[4096], bufcpy[4096];
+    int room_no;
+    std::string username;
+
     while(1) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -111,26 +163,39 @@ void respond(int sock) {
             continue;
         }
 
+        strcpy(bufcpy, buffer);
+
         std::cout << "Client sent: " << buffer << std::endl;
 
         char * token = strtok(buffer, " ");
 
         if(strncmp(token, "/new", 4) == 0) {
             token = strtok(NULL, " "); // TODO may be NULL, check
-            int room_no = atoi(token);
+            room_no = atoi(token);
             token = strtok(NULL, " "); // TODO may be NULL, check
-            std::string username(token);
+            username = token;
 
             chats[room_no].insert(make_pair(username, sock)); // inserting new member to chat
 
-            send_room_msg(room_no, username + " joined room " + std::to_string(room_no), {username});
+            send_room_msg_exc(room_no, username + " joined room " + std::to_string(room_no), {username});
 
             send_message(sock, "Hello " + username + "! This is room #" + std::to_string(room_no));
-        } else if(strncmp(token, "/", 4) == 0) {
-
-        }
-        else {
-            std::cout << "Unknown command" << std::endl; // TODO send to client
+        } else { // send message command
+            if(strncmp(bufcpy, "All : ", 6) == 0) {
+                std::string msg_str(bufcpy);
+                std::string msg = msg_str.substr(6, std::string::npos);
+                send_room_msg_exc(room_no, username + " : " + msg, {username});
+            } else {
+                auto rcps = get_recepients(bufcpy);
+                std::string msg = get_msg(bufcpy);
+                /*
+                for(auto rcp : rcps) {
+                    std::cout << rcp << std::endl;
+                }
+                std::cout << msg << std::endl;
+                 */
+                send_room_msg_to(room_no, username + " : " + msg, rcps);
+            }
         }
     }
 
