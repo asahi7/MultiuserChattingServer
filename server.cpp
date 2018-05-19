@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <string>
 #include "threadpool/ThreadPool.h"
+#include <chrono>
+#include <thread>
 
 #define PORT 5000
 
@@ -81,8 +83,13 @@ void respond(int sock) {
     char buffer[4096];
     while(1) {
 
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
         bzero(buffer, sizeof(buffer));
         recv(sock, buffer, sizeof(buffer), 0);
+        if(strlen(buffer) == 0) {
+            continue;
+        }
 
         std::cout << "Client sent: " << buffer << std::endl;
 
@@ -97,8 +104,7 @@ void respond(int sock) {
             std::string msg = "Hello " + username;
             const char *msg_c = msg.c_str();
             std::cout << msg_c << std::endl;
-            send(sock, msg_c, sizeof(msg_c), 0);
-            break;
+            send(sock, msg_c, strlen(msg_c), 0);
         } else {
             std::cout << "Unknown command" << std::endl; // TODO send to client
         }

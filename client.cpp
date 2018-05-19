@@ -11,6 +11,8 @@
 #include <string>
 #include <sys/socket.h>
 #include <string.h>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
@@ -107,16 +109,35 @@ int main(int argc, char *argv[]) {
     char buffer[4096];
     string msg;
     const char* msg_c;
-    bzero(buffer, sizeof(buffer));
 
     msg = "/new " + to_string(room_no) + " " + client_name;
     msg_c = msg.c_str();
 
     send(sockfd, msg_c, strlen(msg_c), 0);
 
-    recv(sockfd, buffer, sizeof(buffer), 0);
+    int pid = fork();
 
-    cout << buffer << endl;
+    if(pid == 0) {
+        string input;
+        while(1) {
+            getline(cin, input);
+            const char* input_c = input.c_str();
+            send(sockfd, input_c, strlen(input_c), 0);
+            this_thread::sleep_for(chrono::milliseconds(100)); // TODO remove in the future
+        }
+    } else if(pid > 0) {
+        while(1) {
+            bzero(buffer, sizeof(buffer));
+            recv(sockfd, buffer, sizeof(buffer), 0);
+            if(strlen(buffer) != 0) {
+                cout << buffer << endl;
+            }
+            this_thread::sleep_for(chrono::milliseconds(100)); // TODO remove in the future
+        }
+    } else {
+        cout << "ERROR on forking" << endl;
+        exit(1);
+    }
 
     close(sockfd);
 }
