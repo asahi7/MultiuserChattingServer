@@ -1,3 +1,7 @@
+/*
+ * Implemented everything in PDF.
+ * Author: Aibek Smagulov, @asahi7
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -22,8 +26,10 @@
 std::unordered_map<int, std::unordered_map<std::string, int> > chats;
 std::mutex mtx;
 std::unordered_set<std::string> names;
+std::set<std::pair<long long int, std::pair<std::string, int> > > scheduled_msgs;
 
 void respond(int sock);
+void scheduled_interval();
 
 int main(int argc, char *argv[]) {
     int sockfd, portno = PORT;
@@ -70,6 +76,11 @@ int main(int argc, char *argv[]) {
 
     ThreadPool pool(4);
 
+    pool.enqueue([]() {
+                     scheduled_interval();
+                 }
+    );
+
     while (1) {
         /* Acccepting connections */
         int newsockfd = accept(sockfd, (struct sockaddr *) &serv_addr, (socklen_t *) &clilen);
@@ -105,15 +116,17 @@ void send_room_msg_exc(int room_no, std::string msg, std::set<std::string> excep
     mtx.unlock();
 }
 
-std::set<std::string> send_room_msg_to(int room_no, std::string msg, std::set<std::string> rcps) {
+std::set<std::string> send_room_msg_to(int room_no, std::string msg, std::unordered_map<std::string, int> rcps) {
     mtx.lock();
     auto map = chats[room_no];
     std::set<std::string> unfound;
-    for(std::string rcp : rcps) {
-        if(map.find(rcp) != map.end()) {
-            send_message(map[rcp], msg);
+    for(auto rcp : rcps) {
+        if(map.find(rcp.first) != map.end()) {
+            if(rcp.second == 0) {
+                send_message(map[rcp.first], msg);
+            }
         } else {
-            unfound.insert(rcp);
+            unfound.insert(rcp.first);
         }
     }
     mtx.unlock();
@@ -121,19 +134,32 @@ std::set<std::string> send_room_msg_to(int room_no, std::string msg, std::set<st
 }
 
 
-std::set<std::string> get_recepients(char *ch) {
-    std::set<std::string> res;
+std::unordered_map<std::string, int> get_recepients(char *ch) {
+    std::unordered_map<std::string, int> res;
     std::string rec;
+    int wait_tm = 0;
     for(int i = 0; i < strlen(ch); i++) {
         if(ch[i] == ':') {
-            res.insert(rec);
+            res.insert(make_pair(rec, wait_tm));
             break;
         }
         if(ch[i] != ' ' && ch[i] != ',') {
+            if(ch[i] == '#') {
+                int num = 0;
+                i++;
+                while((ch[i] >= '0' && ch[i] <= '9')) {
+                    num = num * 10 + ch[i] - '0';
+                    i++;
+                }
+                i--;
+                wait_tm = num;
+                continue;
+            }
             rec += ch[i];
         } else if(ch[i] == ',') {
-            res.insert(rec);
+            res.insert(make_pair(rec, wait_tm));
             rec = "";
+            wait_tm = 0;
         }
     }
     return res;
@@ -156,6 +182,40 @@ std::string get_msg(char* ch) {
         }
     }
     return res;
+}
+
+void scheduled_interval() {
+    while(1) {
+        std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+                std::chrono::system_clock::now().time_since_epoch()
+        );
+
+        for(auto it = scheduled_msgs.begin(); it != scheduled_msgs.end();) {
+            if((*it).first <= ms.count()) {
+                send_message((*it).second.second, (*it).second.first);
+                scheduled_msgs.erase(it++);
+                continue;
+            }
+            it++;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
+void schedule(std::unordered_map<std::string, int> rcps, std::set<std::string> unfound, std::string msg, int room_no) {
+    std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+            std::chrono::system_clock::now().time_since_epoch()
+    );
+    mtx.lock();
+    for(auto rcp : rcps) {
+        std::string name = rcp.first;
+        if(unfound.find(name) != unfound.end()) {
+            continue;
+        }
+        int rcp_sock = chats[room_no][name];
+        scheduled_msgs.insert(make_pair(ms.count() + ((long long int)rcp.second) * 1000, make_pair(msg, rcp_sock)));
+    }
+    mtx.unlock();
 }
 
 void respond(int sock) { // individual client's thread
@@ -231,14 +291,16 @@ void respond(int sock) { // individual client's thread
             send_message(sock, msg);
         }
         else { // send message command
-            if(strncmp(bufcpy, "All : ", 6) == 0) {
+            auto rcps = get_recepients(bufcpy);
+            const char * first = (*(rcps.begin())).first.c_str();
+            if(rcps.size() == 1 && strncmp(first, "All", 3) == 0) { // TODO can All be assigned scheduled deliver?
                 std::string msg_str(bufcpy);
                 std::string msg = msg_str.substr(6, std::string::npos);
                 send_room_msg_exc(room_no, username + " : " + msg, {username});
             } else {
-                auto rcps = get_recepients(bufcpy);
                 std::string msg = get_msg(bufcpy);
                 auto unfound = send_room_msg_to(room_no, username + " : " + msg, rcps);
+                schedule(rcps, unfound, username + " : " + msg, room_no);
                 std::string unf_msg = "";
                 bool first = 1;
                 for(std::string name : unfound) {
