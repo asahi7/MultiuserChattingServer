@@ -13,6 +13,7 @@
 #include <string.h>
 #include <chrono>
 #include <thread>
+#include "threadpool/ThreadPool.h"
 
 using namespace std;
 
@@ -32,6 +33,9 @@ int convert_str_to_int(const char *str) {
     }
     return res;
 }
+
+void receive_server_chat(int sockfd);
+void send_server_chat(int sockfd);
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
@@ -106,7 +110,6 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    char buffer[4096];
     string msg;
     const char* msg_c;
 
@@ -115,29 +118,39 @@ int main(int argc, char *argv[]) {
 
     send(sockfd, msg_c, strlen(msg_c), 0);
 
-    int pid = fork();
+    ThreadPool pool(2);
 
-    if(pid == 0) {
-        string input;
-        while(1) {
-            getline(cin, input);
-            const char* input_c = input.c_str();
-            send(sockfd, input_c, strlen(input_c), 0);
-            this_thread::sleep_for(chrono::milliseconds(100)); // TODO remove in the future
+    pool.enqueue([](int sockfd) {
+                receive_server_chat(sockfd);
+            }, sockfd
+    );
+
+    pool.enqueue([](int sockfd) {
+                send_server_chat(sockfd);
+            }, sockfd
+    );
+
+    // close(sockfd);
+}
+
+void receive_server_chat(int sockfd) {
+    char buffer[4096];
+    while(1) {
+        bzero(buffer, sizeof(buffer));
+        recv(sockfd, buffer, sizeof(buffer), 0);
+        if(strlen(buffer) != 0) {
+            cout << buffer << endl;
         }
-    } else if(pid > 0) {
-        while(1) {
-            bzero(buffer, sizeof(buffer));
-            recv(sockfd, buffer, sizeof(buffer), 0);
-            if(strlen(buffer) != 0) {
-                cout << buffer << endl;
-            }
-            this_thread::sleep_for(chrono::milliseconds(100)); // TODO remove in the future
-        }
-    } else {
-        cout << "ERROR on forking" << endl;
-        exit(1);
+        this_thread::sleep_for(chrono::milliseconds(100)); // TODO remove in the future
     }
+}
 
-    close(sockfd);
+void send_server_chat(int sockfd) {
+    string input;
+    while (1) {
+        getline(cin, input);
+        const char *input_c = input.c_str();
+        send(sockfd, input_c, strlen(input_c), 0);
+        this_thread::sleep_for(chrono::milliseconds(100)); // TODO remove in the future
+    }
 }
