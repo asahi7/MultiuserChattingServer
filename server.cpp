@@ -205,6 +205,16 @@ void respond(int sock) { // individual client's thread
             send_message(sock, "Good bye " + username);
             send_room_msg_exc(room_no, username + " is disconnected from room #" + std::to_string(room_no), {username});
             break;
+        } else if(strncmp(token, "/list”", 5) == 0) {
+            mtx.lock();
+            int i = 1;
+            std::string msg = "This is list of users in room " + std::to_string(room_no);
+            for(auto user = chats[room_no].begin(); user != chats[room_no].end(); user++) { // TODO should a user also be displayed here?
+                msg += "\n" + std::to_string(i) + ". " + (*user).first;
+                i++;
+            }
+            mtx.unlock();
+            send_message(sock, msg);
         }
         else { // send message command
             if(strncmp(bufcpy, "All : ", 6) == 0) {
