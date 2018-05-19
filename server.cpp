@@ -13,11 +13,13 @@
 #include <chrono>
 #include <thread>
 #include <set>
+#include <mutex>
 #include <unordered_map>
 
 #define PORT 5000
 
 std::unordered_map<int, std::unordered_map<std::string, int> > chats;
+std::mutex mtx;
 
 void respond(int sock);
 
@@ -90,6 +92,7 @@ void send_message(int sock, std::string msg) {
 }
 
 void send_room_msg_exc(int room_no, std::string msg, std::set<std::string> except) {
+    mtx.lock();
     auto it = chats[room_no].begin();
     for(; it != chats[room_no].end(); it++) {
         std::string user_n = (*it).first;
@@ -97,9 +100,11 @@ void send_room_msg_exc(int room_no, std::string msg, std::set<std::string> excep
             send_message((*it).second, msg);
         }
     }
+    mtx.unlock();
 }
 
 std::set<std::string> send_room_msg_to(int room_no, std::string msg, std::set<std::string> rcps) {
+    mtx.lock();
     auto map = chats[room_no];
     std::set<std::string> unfound;
     for(std::string rcp : rcps) {
@@ -109,6 +114,7 @@ std::set<std::string> send_room_msg_to(int room_no, std::string msg, std::set<st
             unfound.insert(rcp);
         }
     }
+    mtx.unlock();
     return unfound;
 }
 
@@ -171,17 +177,27 @@ void respond(int sock) { // individual client's thread
 
         char * token = strtok(buffer, " ");
 
-        if(strncmp(token, "/new", 4) == 0) {
+        if(strncmp(token, "/new", 4) == 0) { // TODO allow this only once for a client
             token = strtok(NULL, " "); // TODO may be NULL, check
             room_no = atoi(token);
             token = strtok(NULL, " "); // TODO may be NULL, check
             username = token;
 
+            mtx.lock();
             chats[room_no].insert(make_pair(username, sock)); // inserting new member to chat
+            mtx.unlock();
 
             send_room_msg_exc(room_no, username + " joined room " + std::to_string(room_no), {username});
 
             send_message(sock, "Hello " + username + "! This is room #" + std::to_string(room_no));
+        } else if(strncmp(token, "/join", 5) == 0) {
+            token = strtok(NULL, " "); // TODO may be NULL, check
+            int new_room_no = atoi(token);
+            mtx.lock();
+            chats[room_no].erase(chats[room_no].find(username));
+            chats[new_room_no].insert(make_pair(username, sock));
+            room_no = new_room_no;
+            mtx.unlock();
         } else { // send message command
             if(strncmp(bufcpy, "All : ", 6) == 0) {
                 std::string msg_str(bufcpy);
