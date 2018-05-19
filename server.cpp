@@ -15,11 +15,13 @@
 #include <set>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 #define PORT 5000
 
 std::unordered_map<int, std::unordered_map<std::string, int> > chats;
 std::mutex mtx;
+std::unordered_set<std::string> names;
 
 void respond(int sock);
 
@@ -184,6 +186,17 @@ void respond(int sock) { // individual client's thread
             username = token;
 
             mtx.lock();
+            int i = 2;
+            std::string candidate_name = username;
+            while(1) {
+                if(names.find(candidate_name) == names.end()) {
+                    break;
+                }
+                candidate_name = username + "-" + std::to_string(i);
+                i++;
+            }
+            username = candidate_name;
+            names.insert(username);
             chats[room_no].insert(make_pair(username, sock)); // inserting new member to chat
             mtx.unlock();
 
@@ -201,6 +214,7 @@ void respond(int sock) { // individual client's thread
         } else if(strncmp(token, "/quit”", 5) == 0) {
             mtx.lock();
             chats[room_no].erase(chats[room_no].find(username));
+            names.erase(names.find(username));
             mtx.unlock();
             send_message(sock, "Good bye " + username);
             send_room_msg_exc(room_no, username + " is disconnected from room #" + std::to_string(room_no), {username});
