@@ -13,8 +13,8 @@
   <component name="ChangeListManager">
     <list default="true" id="4f7b10f5-af34-448f-9c5a-b00de1578e6d" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client" beforeDir="false" afterPath="$PROJECT_DIR$/client" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/client.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server" beforeDir="false" afterPath="$PROJECT_DIR$/server" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/server.cpp" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -35,8 +35,8 @@
       <file leaf-file-name="server.cpp" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="256">
-              <caret line="96" lean-forward="true" selection-start-line="96" selection-end-line="96" />
+            <state relative-caret-position="445">
+              <caret line="119" selection-start-line="119" selection-end-line="119" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -47,8 +47,8 @@
       <file leaf-file-name="client.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/client.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-193">
-              <caret line="109" column="17" lean-forward="true" selection-start-line="109" selection-start-column="17" selection-end-line="109" selection-end-column="17" />
+            <state relative-caret-position="168">
+              <caret line="133" column="1" lean-forward="true" selection-start-line="133" selection-start-column="1" selection-end-line="133" selection-end-column="1" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
               </folding>
@@ -64,8 +64,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/server.cpp" />
         <option value="$PROJECT_DIR$/client.cpp" />
+        <option value="$PROJECT_DIR$/server.cpp" />
       </list>
     </option>
   </component>
@@ -135,12 +135,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1526656382448</updated>
-      <workItem from="1526656385812" duration="10339000" />
+      <workItem from="1526656385812" duration="11837000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="10339000" />
+    <option name="totallyTimeSpent" value="11837000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1280" height="739" extended-state="6" />
@@ -179,10 +179,24 @@
     <entry file="file://$PROJECT_DIR$/Makefile">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
+    <entry file="file:///Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/ostream">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="212">
+          <caret line="1000" selection-start-line="1000" selection-end-line="1000" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/string">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="1118" column="22" selection-start-line="1118" selection-start-column="22" selection-end-line="1118" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/client.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-193">
-          <caret line="109" column="17" lean-forward="true" selection-start-line="109" selection-start-column="17" selection-end-line="109" selection-end-column="17" />
+        <state relative-caret-position="168">
+          <caret line="133" column="1" lean-forward="true" selection-start-line="133" selection-start-column="1" selection-end-line="133" selection-end-column="1" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
           </folding>
@@ -191,8 +205,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/server.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="256">
-          <caret line="96" lean-forward="true" selection-start-line="96" selection-end-line="96" />
+        <state relative-caret-position="445">
+          <caret line="119" selection-start-line="119" selection-end-line="119" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>

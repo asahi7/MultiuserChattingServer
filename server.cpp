@@ -12,8 +12,12 @@
 #include "threadpool/ThreadPool.h"
 #include <chrono>
 #include <thread>
+#include <set>
+#include <unordered_map>
 
 #define PORT 5000
+
+std::unordered_map<int, std::unordered_map<std::string, int> > chats;
 
 void respond(int sock);
 
@@ -79,6 +83,22 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+void send_message(int sock, std::string msg) {
+    const char *msg_c = msg.c_str();
+    // std::cout << msg_c << std::endl; // TODO remove in future
+    send(sock, msg_c, strlen(msg_c), 0);
+}
+
+void send_room_msg(int room_no, std::string msg, std::set<std::string> except) {
+    auto it = chats[room_no].begin();
+    for(; it != chats[room_no].end(); it++) {
+        std::string user_n = (*it).first;
+        if(except.find(user_n) == except.end()) {
+            send_message((*it).second, msg);
+        }
+    }
+}
+
 void respond(int sock) {
     char buffer[4096];
     while(1) {
@@ -96,16 +116,20 @@ void respond(int sock) {
         char * token = strtok(buffer, " ");
 
         if(strncmp(token, "/new", 4) == 0) {
-            std::cout << "Create new user?" << std::endl; // TODO create new user
             token = strtok(NULL, " "); // TODO may be NULL, check
-            std::string room_no(token);
+            int room_no = atoi(token);
             token = strtok(NULL, " "); // TODO may be NULL, check
             std::string username(token);
-            std::string msg = "Hello " + username;
-            const char *msg_c = msg.c_str();
-            std::cout << msg_c << std::endl;
-            send(sock, msg_c, strlen(msg_c), 0);
-        } else {
+
+            chats[room_no].insert(make_pair(username, sock)); // inserting new member to chat
+
+            send_room_msg(room_no, username + " joined room " + std::to_string(room_no), {username});
+
+            send_message(sock, "Hello " + username + "! This is room #" + std::to_string(room_no));
+        } else if(strncmp(token, "/", 4) == 0) {
+
+        }
+        else {
             std::cout << "Unknown command" << std::endl; // TODO send to client
         }
     }
