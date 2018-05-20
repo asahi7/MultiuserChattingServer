@@ -41,3 +41,5 @@ In a client window, write: `All : Hello World!`
 ## Other
 
 A project was developed in the class of Computer Networks taught by Professor Kyunghan Lee, [@UNIST](http://unist.ac.kr/). More info in [PDF](/Project2-Multiuser%20Chatting%20Server.pdf).
+
+![](demo.gif)
