@@ -28,6 +28,7 @@ std::mutex mtx;
 std::unordered_set<std::string> names;
 std::set<std::pair<long long int, std::pair<std::string, int> > > scheduled_msgs;
 std::unordered_map<std::string, long long int> health_timer;
+std::mutex hlth_mtx;
 
 void respond(int sock);
 void scheduled_interval();
@@ -211,27 +212,36 @@ void scheduled_interval() {
 
 void check_health() {
     while(1) {
-        std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-                std::chrono::system_clock::now().time_since_epoch()
-        );
         std::set<std::pair<int, std::string> > exit_msgs;
         mtx.lock();
         for(auto rooms : chats) {
             std::set< std::pair<std::string, int> > to_delete;
-            for(auto user = rooms.second.begin(); user != rooms.second.end();) {
-                if(health_timer.find((*user).first) != health_timer.end() && health_timer[(*user).first] <= ms.count()) {
+            for(auto user = rooms.second.begin(); user != rooms.second.end(); user++) {
+                std::cout << "ok1" << std::endl;
+                hlth_mtx.lock();
+                std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+                        std::chrono::system_clock::now().time_since_epoch()
+                );
+                if(health_timer.find((*user).first) != health_timer.end() && health_timer[(*user).first] < ms.count()) {
+                    std::cout << "ok3" << std::endl;
                     names.erase(names.find((*user).first));
                     exit_msgs.insert(
                             make_pair(rooms.first, (*user).first + " is disconnected from room #" + std::to_string(rooms.first)));
+                    shutdown((*user).second, SHUT_RDWR);
                     close((*user).second);
                     // chats[rooms.first].erase(user++);
+                    health_timer.erase(health_timer.find((*user).first));
                     to_delete.insert(make_pair((*user).first, (*user).second));
-                } else if(health_timer.find((*user).first) == health_timer.end()) {
-                    health_timer[(*user).first] = ms.count() + 3000;
+                    std::cout << "ok4" << std::endl;
+                } else {
+                    std::cout << "ok5" << "\n" << (*user).first << std::endl;
                     send_message((*user).second, "/ishealthy");
+                    std::cout << "ok6" << std::endl;
                 }
-                user++;
+                hlth_mtx.unlock();
+                std::cout << "ok2" << std::endl;
             }
+            std::cout << "ok15" << std::endl;
             for(auto de : to_delete) {
                 auto it = chats[rooms.first].find(de.first);
                 if(it == chats[rooms.first].end()) {
@@ -239,12 +249,15 @@ void check_health() {
                 }
                 chats[rooms.first].erase(it);
             }
+            std::cout << "ok16" << std::endl;
         }
         mtx.unlock();
+        std::cout << "ok17" << std::endl;
         for(auto exit_msg : exit_msgs) {
             send_room_msg_exc(exit_msg.first, exit_msg.second, {});
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+        std::cout << "ok18" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
     }
 }
 
@@ -281,9 +294,9 @@ void respond(int sock) { // individual client's thread
 
         strcpy(bufcpy, buffer);
 
-        if(strncmp(buffer, "/healthy", 8) != 0) {
-            std::cout << "Client sent: " << buffer << std::endl;
-        }
+        //if(strncmp(buffer, "/healthy", 8) != 0) {
+            std::cout << username << " client sent: " << buffer << std::endl;
+        //}
         char * token = strtok(buffer, " ");
 
         if(strncmp(token, "/new", 4) == 0) { // TODO allow this only once for a client
@@ -295,6 +308,7 @@ void respond(int sock) { // individual client's thread
             mtx.lock();
             int i = 2;
             std::string candidate_name = username;
+            std::cout << "ok7" << std::endl;
             while(1) {
                 if(names.find(candidate_name) == names.end()) {
                     break;
@@ -302,20 +316,40 @@ void respond(int sock) { // individual client's thread
                 candidate_name = username + "-" + std::to_string(i);
                 i++;
             }
+            std::cout << "ok8" << std::endl;
             username = candidate_name;
             names.insert(username);
+            std::cout << "ok9" << std::endl;
             chats[room_no].insert(make_pair(username, sock)); // inserting new member to chat
+            std::cout << "ok10" << std::endl;
+            hlth_mtx.lock();
             std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
                     std::chrono::system_clock::now().time_since_epoch()
             );
-            // health_timer[username] = ms.count() + 3000;
+            std::cout << "ok11" << std::endl;
+            health_timer[username] = ms.count() + 3000; // TODO why?????????????????
+            // send_message(sock, "/ishealthy");
+            std::cout << "ok12" << std::endl;
+            hlth_mtx.unlock();
             mtx.unlock();
-
+            std::cout << "ok13" << std::endl;
             send_room_msg_exc(room_no, username + " joined room " + std::to_string(room_no), {username});
 
             send_message(sock, "Hello " + username + "! This is room #" + std::to_string(room_no));
+            std::cout << "ok14" << std::endl;
         } else if(strncmp(token, "/healthy", 8) == 0) {
-            health_timer.erase(health_timer.find(username));
+            if(username == "") {
+                return;
+            }
+            hlth_mtx.lock();
+            std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+                    std::chrono::system_clock::now().time_since_epoch()
+            );
+            if(health_timer.find(username) != health_timer.end()) {
+                // health_timer.erase(health_timer.find(username));
+                health_timer[username] = ms.count() + 3000;
+            }
+            hlth_mtx.unlock();
         }
         else if(strncmp(token, "/join", 5) == 0) {
             token = strtok(NULL, " "); // TODO may be NULL, check
@@ -329,6 +363,9 @@ void respond(int sock) { // individual client's thread
             mtx.lock();
             chats[room_no].erase(chats[room_no].find(username));
             names.erase(names.find(username));
+            hlth_mtx.lock();
+            health_timer.erase(health_timer.find(username));
+            hlth_mtx.unlock();
             mtx.unlock();
             send_message(sock, "Good bye " + username);
             send_room_msg_exc(room_no, username + " is disconnected from room #" + std::to_string(room_no), {username});
