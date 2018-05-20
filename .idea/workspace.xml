@@ -35,8 +35,8 @@
       <file leaf-file-name="server.cpp" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/server.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="408">
-              <caret line="229" column="31" selection-start-line="229" selection-start-column="31" selection-end-line="229" selection-end-column="31" />
+            <state relative-caret-position="388">
+              <caret line="66" column="8" selection-start-line="66" selection-start-column="8" selection-end-line="66" selection-end-column="8" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -47,7 +47,7 @@
       <file leaf-file-name="client.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/client.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="227">
+            <state relative-caret-position="1446">
               <caret line="142" column="40" lean-forward="true" selection-start-line="142" selection-start-column="40" selection-end-line="142" selection-end-column="40" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
@@ -60,6 +60,7 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
+      <find>ok</find>
       <find>cout</find>
     </findStrings>
   </component>
@@ -140,12 +141,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1526656382448</updated>
-      <workItem from="1526656385812" duration="37303000" />
+      <workItem from="1526656385812" duration="38738000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="37303000" />
+    <option name="totallyTimeSpent" value="38738000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1280" height="739" extended-state="6" />
@@ -207,7 +208,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/client.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="227">
+        <state relative-caret-position="1446">
           <caret line="142" column="40" lean-forward="true" selection-start-line="142" selection-start-column="40" selection-end-line="142" selection-end-column="40" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
@@ -217,8 +218,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/server.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="408">
-          <caret line="229" column="31" selection-start-line="229" selection-start-column="31" selection-end-line="229" selection-end-column="31" />
+        <state relative-caret-position="388">
+          <caret line="66" column="8" selection-start-line="66" selection-start-column="8" selection-end-line="66" selection-end-column="8" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
